@@ -1,14 +1,14 @@
 # Step 1: Project Structure and Setup
 
 ## Objective
-Create the foundational directory structure and configuration files for the Oracle Activity Monitor application that queries MULTIPLE Oracle databases concurrently.
+Create the foundational directory structure and configuration files for the client Activity Monitor application that queries MULTIPLE client databases concurrently.
 
 ## A. Complete Directory Structure
 
 Create the following directory structure:
 
 ```text
-oracle_activity_monitor/
+client_activity_monitor/
 │
 ├── .gitignore
 ├── pyproject.toml
@@ -19,10 +19,10 @@ oracle_activity_monitor/
 │   └── databases.yaml              # Single configuration file for all settings
 │
 ├── queries/
-│   ├── password_changes.sql
-│   ├── email_changes.sql
-│   ├── phone_changes.sql
-│   └── token_changes.sql
+│   ├── get_all_password_changes.sql
+│   ├── get_all_email_changes.sql
+│   ├── get_all_phone_changes.sql
+│   └── get_all_token_changes.sql
 │
 ├── reports/                        # Output directory for generated reports
 │
@@ -34,7 +34,7 @@ oracle_activity_monitor/
 │   └── __init__.py
 │
 └── src/
-    └── oracle_activity_monitor/
+    └── client_activity_monitor/
         ├── __init__.py
         │
         ├── model/
@@ -73,7 +73,7 @@ oracle_activity_monitor/
 
 ## B. Configuration File Structure
 
-create `configs/app_setting.yaml` with the following structures:
+create `configs/app_settings.yaml` with the following structures:
 
     ```yaml
     # Oracle Kerberos Client Configuration (SHARED across all databases)
@@ -104,19 +104,19 @@ Create `configs/databases.yaml` with the following structure:
 databases:
   - name: client_activity_analysis
     host: localhost
-    port: 5432
+    port: 6336
     service_name: client_activity_analysis
     default_schema: "audit_logs"
     sql_queries:
       - name: "Get all email changes"
         query_location: "queries/get_all_email_changes.sql"
       - name: "Get phone changes by client ID"
-        query_location: "queries/get_phone_changes_by_client_id.sql"
+        query_location: "queries/get_all_phone_changes.sql"
       - name: "Get token changes"
         query_location: "queries/get_token_changes.sql"
   - name: account_activity_analysis
     host: localhost
-    port: 5432
+    port: 6336
     service_name: account_activity_analysis_activity_analysis
     default_schema: "audit_logs"
     sql_queries:
@@ -149,7 +149,7 @@ Create `pyproject.toml`:
 
 ```toml
 [tool.poetry]
-name = "oracle-activity-monitor"
+name = "client-activity-monitor"
 version = "0.1.0"
 description = "Monitor user activity across multiple Oracle databases"
 authors = ["Your Name <your.email@example.com>"]
@@ -176,7 +176,7 @@ requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry.scripts]
-oracle-monitor = "oracle_activity_monitor.main:main"
+client-monitor = "client_activity_monitor.main:main"
 ```
 
 ## E. Git Configuration
@@ -217,8 +217,8 @@ Thumbs.db
 
 ## F. Module Placement
 
-1. Place your existing `ez_connect_oracle.py` file in:
-   `src/oracle_activity_monitor/model/repositories/ez_connect_oracle.py`
+1. Place your existing `ez_connect_client.py` file in:
+   `src/client_activity_monitor/model/repositories/ez_connect_oracle.py`
 
 2. Create empty `__init__.py` files in all directories to make them Python packages
 
@@ -233,18 +233,18 @@ After creating the structure:
 
 2. Verify the structure:
    ```bash
-   tree oracle_activity_monitor -I '__pycache__|*.pyc'
+   tree client_activity_monitor -I '__pycache__|*.pyc'
    ```
 
-3. Test import of your Oracle module:
+3. Test import of your client module:
    ```python
-   from oracle_activity_monitor.model.repositories.ez_connect_oracle import OracleKerberosConnection
+   from client_activity_monitor.model.repositories.ez_connect_client import OracleKerberosConnection
    ```
 
 ## Key Points for Implementation
 
 1. **Single Oracle Client Configuration**: The `oracle_client` section is defined once and shared across all database connections
 2. **Multiple Databases**: The `databases` list contains multiple database endpoints
-3. **Standard SQL Parameters**: All queries use `:user_id` and `:start_date`
+3. **Standard SQL Parameters**: All queries use  `:start_date`
 4. **MVC Structure**: Clear separation between Model, View, and Controller
 5. **Your Existing Module**: `ez_connect_oracle.py` is placed in the repositories layer
