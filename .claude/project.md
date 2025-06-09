@@ -97,31 +97,38 @@ client_activity_monitor/
       report_output_dir: "reports"
       log_dir: "logs"
       log_level: "INFO"
-      email_recipients: []  # Will be populated via UI
+      email_recipients: ["email1.abc.com", "email2.abc.com"]  
     user_settings:
       sid: "A12345"
     ```
 
 **4.2. Database Definitions (`configs/databases.yaml`)**
 
-* **Purpose:** Defines the target multiple databases and the queries to run against them.
+* **Purpose:** Defines the target multiple databases and the queries and location to run against them.
 * **Structure:**
 
     ```yaml
     databases:
-    - name: "IDM_DATABASE"
-        host: "idm.proddb.example.com"
-        port: 1521
-        service_name: "IDMPROD"
-        default_schema: "REPORTS"
-      
-    - name: "AUDIT_DATABASE"
-        host: "audit.proddb.example.com"
-        port: 1521
-        service_name: "AUDITPROD"
-        default_schema: "AUDIT_LOGS"
-
-    # ... other database definitions ...
+    - name: client_activity_analysis
+      host: localhost
+      port: 5432
+      service_name: client_activity_analysis
+      default_schema: "audit_logs"
+      sql_queries:
+        - name: "Get all email changes"
+          query_location: "queries/get_all_email_changes.sql"
+        - name: "Get phone changes by client ID"
+          query_location: "queries/get_phone_changes_by_client_id.sql"
+        - name: "Get token changes"
+          query_location: "queries/get_token_changes.sql"
+    - name: account_activity_analysis
+      host: localhost
+      port: 5432
+      service_name: account_activity_analysis_activity_analysis
+      default_schema: "audit_logs"
+      sql_queries:
+        - name: "Get all password changes"
+          query_location: "queries/get_all_password_changes.sql"
     ```
 
 **4.3. SQL Queries (`queries/*.sql`)**

@@ -1,48 +1,58 @@
-# **Step 1: Project Structure and Setup (With Oracle Connection Module Integration)**
+# Step 1: Project Structure and Setup
 
-## **A. Directory Layout**
+## Objective
+Create the foundational directory structure and configuration files for the Oracle Activity Monitor application that queries MULTIPLE Oracle databases concurrently.
 
-Establish your main project directory and core folders, **placing your existing Oracle connection module in the proper place for the MVC architecture**:
+## A. Complete Directory Structure
+
+Create the following directory structure:
 
 ```text
-client_activity_monitor/
+oracle_activity_monitor/
 │
 ├── .gitignore
-├── pyproject.toml                    # Poetry configuration
+├── pyproject.toml
 ├── README.md
 ├── LICENSE
 │
-├── configs/                          # Configuration files for the app
-│   ├── app_settings.yaml             # App config: Oracle/Kerberos/paths/recipients
+├── configs/
+│   └── databases.yaml              # Single configuration file for all settings
 │
-├── queries/                          # Standalone .sql files (one per query type)
-│   ├── password_change.sql
-│   ├── email_change.sql
-│   ├── phone_change.sql
-│   ├── token_change.sql
+├── queries/
+│   ├── password_changes.sql
+│   ├── email_changes.sql
+│   ├── phone_changes.sql
+│   └── token_changes.sql
 │
-├── reports/                          # Output directory for generated reports
+├── reports/                        # Output directory for generated reports
 │
-├── docs/                             # Documentation and diagrams
-│   ├── architecture.md
-│   └── user_guide.md
+├── logs/                          # Application logs directory
 │
-├── tests/                            # Unit/integration tests
+├── tests/
+│   ├── unit/
+│   ├── integration/
+│   └── __init__.py
 │
 └── src/
-    └── client_activity_monitor/
-        │
+    └── oracle_activity_monitor/
         ├── __init__.py
         │
         ├── model/
         │   ├── __init__.py
-        │   ├── config_manager.py             # For reading/writing YAML config
-        │   ├── domain/                       # Data classes (UserChange, etc.)
+        │   ├── config_manager.py
         │   ├── repositories/
         │   │   ├── __init__.py
-        │   │   └── ez_connect_oracle.py      # <-- Place your module here!
-        │   ├── services/                     # Business logic, KINIT, merge, report
-        │   └── integrations/                 # Outlook, OneNote, clipboard
+        │   │   ├── ez_connect_oracle.py    # Your existing Oracle connection module
+        │   │   └── query_repository.py
+        │   ├── services/
+        │   │   ├── __init__.py
+        │   │   ├── database_executor.py
+        │   │   ├── merge_filter_service.py
+        │   │   └── report_generator.py
+        │   └── integrations/
+        │       ├── __init__.py
+        │       ├── email_service.py
+        │       └── onenote_service.py
         │
         ├── view/
         │   ├── __init__.py
@@ -58,94 +68,183 @@ client_activity_monitor/
         │   ├── __init__.py
         │   └── main_controller.py
         │
-        ├── common/
-        │   ├── __init__.py
-        │   └── utils.py
-        │
         └── main.py
 ```
 
-***Key point:***
-Your `ez_connect_oracle.py` will be the **core database access layer**. Other code will import and use its classes/methods for all Oracle DB and Kerberos connections.
+## B. Configuration File Structure
 
----
+create `configs/app_setting.yaml` with the following structures:
 
-## **B. Initial Files and Conventions**
+    ```yaml
+    # Oracle Kerberos Client Configuration (SHARED across all databases)
+    oracle_client:
+      instant_client_dir: "/opt/oracle/instantclient"
+      krb5_conf: "/etc/krb5.conf"
+      krb5_cache: "/tmp/krb5cc_user"
+      trace_level: 16
+      trace_directory: "/tmp/oracle_trace"
+    
+    # application settings
+    app_settings:
+      report_output_dir: "reports"
+      log_dir: "logs"
+      log_level: "INFO"
+      email_recipients: ["email1.abc.com", "email2.abc.com"]  
 
-* **Create all directories and `__init__.py` files** as above.
-* **Add your `ez_connect_oracle.py` module** into `src/client_activity_monitor/model/repositories/`.
-* **In your README.md**, note:
-  “This project uses an in-house Oracle Kerberos connection module for all database operations. Configuration must follow the expected schema for DatabaseConnectionConfig and OracleClientConfig.”
+    # user settings
+    user_settings:
+      sid: "A12345"
+    ```
 
----
-
-## **C. Initial Configuration File**
-
-* Create a `configs/app_settings.yaml` file (can be empty for now).
-* Make sure field names match what your `ez_connect_oracle.py` expects:
-
-  * host, port, service\_name, default\_schema
-  * oracle\_client:
-
-    * instant\_client\_dir, krb5\_conf, krb5\_cache, \[trace\_level], \[trace\_directory]
-
-**Example YAML Skeleton:**
+Create `configs/databases.yaml` with the following structure:
 
 ```yaml
-host: "proddbgo.example.com"
-port: 1521
-service_name: "ORCL"
-default_schema: "MYSCHEMA"
-oracle_client:
-  instant_client_dir: "/path/to/instantclient"
-  krb5_conf: "/path/to/krb5.conf"
-  krb5_cache: "/path/to/krb5cc"
-  trace_level: 16
-  trace_directory: "/path/to/trace"
+
+# Database Configurations (multiple databases)
+databases:
+  - name: client_activity_analysis
+    host: localhost
+    port: 5432
+    service_name: client_activity_analysis
+    default_schema: "audit_logs"
+    sql_queries:
+      - name: "Get all email changes"
+        query_location: "queries/get_all_email_changes.sql"
+      - name: "Get phone changes by client ID"
+        query_location: "queries/get_phone_changes_by_client_id.sql"
+      - name: "Get token changes"
+        query_location: "queries/get_token_changes.sql"
+  - name: account_activity_analysis
+    host: localhost
+    port: 5432
+    service_name: account_activity_analysis_activity_analysis
+    default_schema: "audit_logs"
+    sql_queries:
+      - name: "Get all password changes"
+        query_location: "queries/get_all_password_changes.sql"
 ```
 
----
+## C. SQL Query Files
 
-## **D. Poetry & Version Control**
+Create placeholder SQL files in the `queries/` directory. Each file should use these standard parameters:
+- `:start_date` - The datetime to search from
 
-* **Initialize Poetry:**
+Example `queries/get_all_password_changes.sql`:
+```sql
+SELECT 
+    user_id,
+    change_timestamp,
+    'password' as change_type
+FROM 
+    user_password_history
+WHERE 
+    change_timestamp >= :start_date
+ORDER BY 
+    change_timestamp DESC
+```
 
-  ```bash
-  poetry init
-  poetry add oracledb pydantic customtkinter pandas pyyaml
-  ```
+## D. Poetry Configuration
 
-* **Initialize Git:**
+Create `pyproject.toml`:
 
-  ```bash
-  git init
-  echo "reports/\n__pycache__/\n*.pyc" > .gitignore
-  ```
+```toml
+[tool.poetry]
+name = "oracle-activity-monitor"
+version = "0.1.0"
+description = "Monitor user activity across multiple Oracle databases"
+authors = ["Your Name <your.email@example.com>"]
 
----
+[tool.poetry.dependencies]
+python = "^3.12"
+oracledb = {version = "^2.0.0", extras = ["kerberos"]}
+pydantic = "^2.0.0"
+customtkinter = "^5.2.0"
+pandas = "^2.2.0"
+openpyxl = "^3.1.2"
+pyyaml = "^6.0"
+loguru = "^0.7.0"
+pyperclip = "^1.8.2"
 
-## **E. Validation**
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.4.0"
+pytest-cov = "^4.1.0"
+black = "^23.0.0"
+pylint = "^3.0.0"
 
-* **Test your connection:**
-  Before building more, validate that `ez_connect_oracle.py` works with your test YAML config by running a simple script (you can use your existing module’s test block).
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
 
----
+[tool.poetry.scripts]
+oracle-monitor = "oracle_activity_monitor.main:main"
+```
 
-## **F. What Comes Next**
+## E. Git Configuration
 
-* Once your project structure is in place and you have a working connection,
-  **proceed to Step 2: Implementing the ConfigManager and Configuration UI Panel**.
+Create `.gitignore`:
 
----
+```gitignore
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
 
-## **Summary Table (Step 1, Updated)**
+# Poetry
+dist/
+*.egg-info/
 
-| Sub-Step                   | What to Do                                     | Why/Result                                      |
-| -------------------------- | ---------------------------------------------- | ----------------------------------------------- |
-| Directory/Module Setup     | Place code files as above                      | Ensures clean MVC and reusable code             |
-| Add ez\_connect\_oracle.py | To `model/repositories/`                       | Centralizes Oracle DB/Kerberos code             |
-| Create config YAML         | Use structure matching Pydantic models         | Immediate compatibility and validation          |
-| Poetry & Git Init          | Initialize, add dependencies, commit structure | Ready for modular, versioned development        |
-| Validate DB Connect        | Use sample/test config, run sample query       | Ensures base “Model” layer is operational early |
+# Application
+reports/*.xlsx
+reports/*.csv
+logs/*.log
+configs/databases_local.yaml  # Local override config
 
----
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+```
+
+## F. Module Placement
+
+1. Place your existing `ez_connect_oracle.py` file in:
+   `src/oracle_activity_monitor/model/repositories/ez_connect_oracle.py`
+
+2. Create empty `__init__.py` files in all directories to make them Python packages
+
+## G. Initial Validation
+
+After creating the structure:
+
+1. Initialize Poetry:
+   ```bash
+   poetry install
+   ```
+
+2. Verify the structure:
+   ```bash
+   tree oracle_activity_monitor -I '__pycache__|*.pyc'
+   ```
+
+3. Test import of your Oracle module:
+   ```python
+   from oracle_activity_monitor.model.repositories.ez_connect_oracle import OracleKerberosConnection
+   ```
+
+## Key Points for Implementation
+
+1. **Single Oracle Client Configuration**: The `oracle_client` section is defined once and shared across all database connections
+2. **Multiple Databases**: The `databases` list contains multiple database endpoints
+3. **Standard SQL Parameters**: All queries use `:user_id` and `:start_date`
+4. **MVC Structure**: Clear separation between Model, View, and Controller
+5. **Your Existing Module**: `ez_connect_oracle.py` is placed in the repositories layer
