@@ -11,7 +11,7 @@ To create a desktop application that provides a unified view of a specific user'
 
 ### 1.2. Core Technologies
 
-* **Language:** Python 3.9+
+* **Language:** Python 3.12+
 * **Dependency Management:** Poetry
 * **GUI Framework:** CustomTkinter
 * **Data Manipulation:** Pandas
@@ -47,7 +47,7 @@ client_activity_monitor/
 │
 ├── configs/
 │   ├── databases.yaml       # Defines database connections and SQL file paths
-│   └── app_settings.json    # Stores user-specific saved paths
+│   └── app_settings.yaml    # Stores user-specific saved paths
 │
 ├── queries/
 │   ├── idm_password_changes.sql
@@ -67,7 +67,7 @@ client_activity_monitor/
         ├── model/
         │   ├── __init__.py
         │   ├── ez_connect_oracle.py     # Core Oracle connection class
-        │   ├── config_manager.py      # Handles app_settings.json
+        │   ├── config_manager.py      # Handles app_settings.yaml
         │   ├── database_executor.py   # Manages concurrent query execution
         │   ├── data_analyzer.py       # Merges and analyzes results
         │   └── report_generator.py    # Creates all report formats
@@ -81,41 +81,53 @@ client_activity_monitor/
 
 ### 4. Configuration Management
 
-**4.1. Application Settings (`configs/app_settings.json`)**
+**4.1. Application Settings (`configs/app_settings.yaml`)**
 
 * **Purpose:** Stores user-specific file paths to avoid re-entry. Managed by the UI.
 * **Structure:**
 
-    ```json
-    {
-      "oracle_client_dir": "path/to/instantclient",
-      "krb5_cache_file": "path/to/krb5cc",
-      "krb5_config_file": "path/to/krb5.conf"
-    }
+    ```yaml
+    oracle_client:
+      instant_client_dir: "/opt/oracle/instantclient"
+      krb5_conf: "/etc/krb5.conf"
+      krb5_cache: "/tmp/krb5cc_user"
+      trace_level: 16
+      trace_directory: "/tmp/oracle_trace"
+    app_settings:
+      report_output_dir: "reports"
+      log_dir: "logs"
+      log_level: "INFO"
+      email_recipients: []  # Will be populated via UI
+    user_settings:
+      sid: "A12345"
     ```
 
 **4.2. Database Definitions (`configs/databases.yaml`)**
 
-* **Purpose:** Defines the target databases and the queries to run against them.
+* **Purpose:** Defines the target multiple databases and the queries to run against them.
 * **Structure:**
 
     ```yaml
     databases:
-      - name: "IDM_DATABASE"
+    - name: "IDM_DATABASE"
         host: "idm.proddb.example.com"
         port: 1521
         service_name: "IDMPROD"
         default_schema: "REPORTS"
-        sql_files:
-          - "queries/idm_password_changes.sql"
-      - name: "AUDIT_DATABASE"
-        # ... other database definitions ...
+      
+    - name: "AUDIT_DATABASE"
+        host: "audit.proddb.example.com"
+        port: 1521
+        service_name: "AUDITPROD"
+        default_schema: "AUDIT_LOGS"
+
+    # ... other database definitions ...
     ```
 
 **4.3. SQL Queries (`queries/*.sql`)**
 
 * **Purpose:** Each `.sql` file contains a single, complex SQL query. Using external files keeps the YAML clean and makes queries easier to maintain.
-* **Parameters:** Queries must use `oracledb` named placeholders (e.g., `:user_id`, `:start_date`) for dynamic values.
+* **Parameters:** Queries must use `oracledb` named placeholders (e.g. `:start_date`) for dynamic values.
 
 ### 5. Component Deep Dive (MVC Implementation)
 
@@ -127,7 +139,7 @@ client_activity_monitor/
 
 * **`config_manager.py`**
   * **Functions:** `save_settings(path, settings_data)`, `load_settings(path)`
-  * **Responsibility:** Handles JSON serialization and deserialization for the `app_settings.json` file.
+  * **Responsibility:** Handles YAML serialization and deserialization for the `app_settings.yaml` file.
 
 * **`database_executor.py`**
   * **Class:** `DatabaseExecutor`
