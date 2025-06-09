@@ -2,7 +2,7 @@
 
 The following is the project outline.  It need more work.
 
-## **Project Design Document: User Activity Analysis Monitor**
+## **Client Activity Monitor - Development Plan
 
 ### 1. Introduction & Goals
 
@@ -111,7 +111,7 @@ client_activity_monitor/
     databases:
     - name: client_activity_analysis
       host: localhost
-      port: 5432
+      port: 6036
       service_name: client_activity_analysis
       default_schema: "audit_logs"
       sql_queries:
