@@ -44,7 +44,7 @@
 
 ## **B. Modular Panel Implementation**
 
-**Each panel is its own class** in `src/oracle_activity_monitor/view/panels/`:
+**Each panel is its own class** in `src/client_activity_monitor/view/panels/`:
 
 * `configuration_panel.py`
 * `run_analysis_panel.py`
@@ -54,7 +54,7 @@
 **Sample directory:**
 
 ```text
-src/oracle_activity_monitor/view/panels/
+src/client_activity_monitor/view/panels/
     configuration_panel.py
     run_analysis_panel.py
     database_status_panel.py

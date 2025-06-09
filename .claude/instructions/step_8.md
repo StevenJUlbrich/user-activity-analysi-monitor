@@ -11,7 +11,7 @@
 ## **A. OneNoteService (Clipboard Generator)**
 
 **Directory:**
-`src/oracle_activity_monitor/model/integrations/onenote_service.py`
+`src/client_activity_monitor/model/integrations/onenote_service.py`
 
 **Example Implementation:**
 

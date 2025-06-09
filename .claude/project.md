@@ -38,7 +38,7 @@ To ensure the UI remains responsive during database operations, the application 
 The project will be organized using a standard Poetry layout to manage dependencies and packaging effectively.
 
 ```text
-oracle_activity_monitor/
+client_activity_monitor/
 │
 ├── .gitignore
 ├── pyproject.toml           # Poetry's config for dependencies & project info
@@ -56,7 +56,7 @@ oracle_activity_monitor/
 ├── reports/                 # Default output directory for generated reports
 │
 └── src/
-    └── oracle_activity_monitor/ # Main application package
+    └── client_activity_monitor/ # Main application package
         │
         ├── __init__.py
         │
@@ -119,7 +119,7 @@ oracle_activity_monitor/
 
 ### 5. Component Deep Dive (MVC Implementation)
 
-#### **5.1. Model Layer (`src/oracle_activity_monitor/model/`)**
+#### **5.1. Model Layer (`src/client_activity_monitor/model/`)**
 
 * **`ez_connect_oracle.py`**
   * **Class:** `OracleKerberosConnection`
@@ -146,7 +146,7 @@ oracle_activity_monitor/
     * `generate_onenote_table_string(df_row)`: Formats a single row of data into a tab-separated string suitable for pasting into a OneNote table.
     * `generate_mailto_link(df)`: Creates a `mailto:` URL with a pre-formatted subject and an HTML table in the body, summarizing the report DataFrame.
 
-#### **5.2. View Layer (`src/oracle_activity_monitor/view/`)**
+#### **5.2. View Layer (`src/client_activity_monitor/view/`)**
 
 * **`app_ui.py`**
   * **Class:** `AppUI(customtkinter.CTk)`
@@ -159,7 +159,7 @@ oracle_activity_monitor/
     * **Actions Frame:** Buttons for "Generate Email", "Copy Report Path", and "Copy Row for OneNote".
   * **Public Methods (for Controller use):** `update_results(df)`, `set_progress(value, text)`, `show_message(title, message)`, `set_controls_state(is_running)`.
 
-#### **5.3. Controller Layer (`src/oracle_activity_monitor/controller/`)**
+#### **5.3. Controller Layer (`src/client_activity_monitor/controller/`)**
 
 * **`main_controller.py`**
   * **Class:** `MainController`
@@ -176,7 +176,7 @@ oracle_activity_monitor/
 
 ### 6. Application Entry Point & Dependencies
 
-**6.1. Entry Point (`src/oracle_activity_monitor/main.py`)**
+**6.1. Entry Point (`src/client_activity_monitor/main.py`)**
 
 * A simple script to instantiate and launch the application.
 

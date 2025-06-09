@@ -15,7 +15,7 @@
 Centralizes all Oracle DB access using your existing `ez_connect_oracle.py` in the repository layer.
 
 **Directory:**
-`src/oracle_activity_monitor/model/repositories/query_repository.py`
+`src/client_activity_monitor/model/repositories/query_repository.py`
 
 **Example Implementation Outline:**
 
@@ -55,7 +55,7 @@ class QueryRepository:
 Coordinates running all four queries, applies filters (using “last event time”), and merges results.
 
 **Directory:**
-`src/oracle_activity_monitor/model/services/query_service.py`
+`src/client_activity_monitor/model/services/query_service.py`
 
 **Example Implementation Outline:**
 

@@ -11,7 +11,7 @@
 ## **A. Merge & Filter Service Module**
 
 **Directory:**
-`src/oracle_activity_monitor/model/services/merge_filter_service.py`
+`src/client_activity_monitor/model/services/merge_filter_service.py`
 
 **Core Algorithm:**
 

@@ -20,7 +20,7 @@ Your task is to implement the following “brick” of the User Activity Analysi
 (Brief description, e.g. “DatabaseExecutor class for concurrent multi-DB query execution”)
 
 **File/Directory:**  
-`[canonical project path, e.g. src/oracle_activity_monitor/model/services/database_executor.py]`
+`[canonical project path, e.g. src/client_activity_monitor/model/services/database_executor.py]`
 
 **Key Requirements:**  
 

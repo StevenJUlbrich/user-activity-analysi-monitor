@@ -12,7 +12,7 @@
 ## **A. ReportingService Module**
 
 **Directory:**
-`src/oracle_activity_monitor/model/services/reporting_service.py`
+`src/client_activity_monitor/model/services/reporting_service.py`
 
 **Core Responsibilities:**
 
@@ -74,7 +74,7 @@ class ReportingService:
 ## **B. Clipboard Utility Module**
 
 **Directory:**
-`src/oracle_activity_monitor/common/clipboard_utils.py`
+`src/client_activity_monitor/common/clipboard_utils.py`
 
 **Core Responsibility:**
 Allow copying the generated report file path to the clipboard (for easy email attachment).

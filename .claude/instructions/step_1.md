@@ -5,7 +5,7 @@
 Establish your main project directory and core folders, **placing your existing Oracle connection module in the proper place for the MVC architecture**:
 
 ```text
-oracle_activity_monitor/
+client_activity_monitor/
 │
 ├── .gitignore
 ├── pyproject.toml                    # Poetry configuration
@@ -30,7 +30,7 @@ oracle_activity_monitor/
 ├── tests/                            # Unit/integration tests
 │
 └── src/
-    └── oracle_activity_monitor/
+    └── client_activity_monitor/
         │
         ├── __init__.py
         │
@@ -73,7 +73,7 @@ Your `ez_connect_oracle.py` will be the **core database access layer**. Other co
 ## **B. Initial Files and Conventions**
 
 * **Create all directories and `__init__.py` files** as above.
-* **Add your `ez_connect_oracle.py` module** into `src/oracle_activity_monitor/model/repositories/`.
+* **Add your `ez_connect_oracle.py` module** into `src/client_activity_monitor/model/repositories/`.
 * **In your README.md**, note:
   “This project uses an in-house Oracle Kerberos connection module for all database operations. Configuration must follow the expected schema for DatabaseConnectionConfig and OracleClientConfig.”
 

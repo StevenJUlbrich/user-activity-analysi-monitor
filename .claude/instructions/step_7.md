@@ -10,7 +10,7 @@
 
 ### **A. OutlookService (Web/Mailto Only)**
 
-**File:** `src/oracle_activity_monitor/model/integrations/outlook_service.py`
+**File:** `src/client_activity_monitor/model/integrations/outlook_service.py`
 
 ```python
 import webbrowser
