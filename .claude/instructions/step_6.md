@@ -1,155 +1,405 @@
-# **Step 6: Report Generation & Export**
+# Step 6: Report Generation & Export
 
-## **Objective**
+## Objective
+Export the filtered DataFrame containing qualifying users to Excel and CSV formats, with proper formatting and metadata including the SID of the user who ran the report.
 
-* **Export the filtered, merged DataFrame (from Step 5) as an Excel file** (and optionally CSV).
-* Save the file to a reports directory with a timestamped filename.
-* Allow the report path to be copied to clipboard via the UI.
-* Prepare the report for attachment to an email (in the next step).
+## A. Report Generator Implementation
 
----
+Create `src/client_activity_monitor/model/services/report_generator.py`:
 
-## **A. ReportingService Module**
+### Purpose
+Generate timestamped Excel and CSV reports with proper formatting and audit information.
 
-**Directory:**
-`src/client_activity_monitor/model/services/reporting_service.py`
-
-**Core Responsibilities:**
-
-* Export DataFrame to Excel (and optionally CSV).
-* Return/save file path for use in UI, email, and OneNote integration.
-
-**Example Implementation:**
+### Implementation
 
 ```python
 import pandas as pd
 from pathlib import Path
 from datetime import datetime
+from typing import Optional, Dict, Any
+from loguru import logger
+import openpyxl
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils.dataframe import dataframe_to_rows
 
-class ReportingService:
+class ReportGenerator:
     """
-    Handles exporting results to Excel and CSV, manages report paths.
+    Handles report generation in Excel and CSV formats.
     """
-    def __init__(self, report_dir="reports"):
-        self.report_dir = Path(report_dir)
-        self.report_dir.mkdir(exist_ok=True)
-
-    def export_to_excel(self, df: pd.DataFrame, prefix: str = "user_activity_report") -> Path:
+    
+    def __init__(self, report_output_dir: str = "reports"):
         """
-        Saves DataFrame to an Excel file in the reports directory.
-
+        Initialize report generator with output directory.
+        
         Args:
-            df: DataFrame to export
-            prefix: Filename prefix (default: user_activity_report)
-
+            report_output_dir: Directory to save reports
+        """
+        self.report_dir = Path(report_output_dir)
+        self.report_dir.mkdir(exist_ok=True)
+        
+    def create_excel_report(
+        self,
+        data: pd.DataFrame,
+        user_sid: str,
+        last_event_time: datetime,
+        additional_info: Optional[Dict[str, Any]] = None
+    ) -> Path:
+        """
+        Create formatted Excel report with metadata.
+        
+        Args:
+            data: Filtered DataFrame with qualifying users
+            user_sid: SID of user who ran the report (for audit)
+            last_event_time: The "Last Time Event Reported" used for filtering
+            additional_info: Optional additional metadata
+            
         Returns:
-            Path to the saved Excel file
+            Path to the generated Excel file
         """
-        if df.empty:
-            raise ValueError("No data to export.")
-
+        # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_path = self.report_dir / f"{prefix}_{timestamp}.xlsx"
-        df.to_excel(file_path, index=False)
-        return file_path
-
-    def export_to_csv(self, df: pd.DataFrame, prefix: str = "user_activity_report") -> Path:
+        filename = f"user_activity_report_{timestamp}.xlsx"
+        filepath = self.report_dir / filename
+        
+        # Create Excel writer
+        with pd.ExcelWriter(filepath, engine='openpyxl') as writer:
+            # Write main data
+            data.to_excel(writer, sheet_name='User Activity', index=False)
+            
+            # Get workbook and worksheet
+            workbook = writer.book
+            worksheet = writer.sheets['User Activity']
+            
+            # Apply formatting
+            self._format_excel_worksheet(worksheet, data)
+            
+            # Add metadata sheet
+            self._add_metadata_sheet(
+                workbook,
+                user_sid,
+                last_event_time,
+                len(data),
+                additional_info
+            )
+            
+        logger.info(f"Excel report generated: {filepath}")
+        return filepath
+        
+    def create_csv_report(
+        self,
+        data: pd.DataFrame,
+        user_sid: str,
+        last_event_time: datetime
+    ) -> Path:
         """
-        Saves DataFrame to a CSV file.
-
+        Create CSV report (optional save).
+        
+        Args:
+            data: Filtered DataFrame with qualifying users
+            user_sid: SID of user who ran the report
+            last_event_time: The "Last Time Event Reported" used for filtering
+            
         Returns:
-            Path to the saved CSV file
+            Path to the generated CSV file
         """
-        if df.empty:
-            raise ValueError("No data to export.")
-
+        # Generate filename with timestamp
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        file_path = self.report_dir / f"{prefix}_{timestamp}.csv"
-        df.to_csv(file_path, index=False)
-        return file_path
+        filename = f"user_activity_report_{timestamp}.csv"
+        filepath = self.report_dir / filename
+        
+        # Add metadata as comments at the top of CSV
+        with open(filepath, 'w') as f:
+            f.write(f"# User Activity Report\n")
+            f.write(f"# Generated By: {user_sid}\n")
+            f.write(f"# Generated At: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"# Last Event Time: {last_event_time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"# Total Users: {len(data)}\n")
+            f.write("#\n")
+            
+        # Append data to CSV
+        data.to_csv(filepath, mode='a', index=False)
+        
+        logger.info(f"CSV report generated: {filepath}")
+        return filepath
+        
+    def _format_excel_worksheet(self, worksheet, data: pd.DataFrame):
+        """
+        Apply formatting to Excel worksheet.
+        """
+        # Header formatting
+        header_font = Font(bold=True, color="FFFFFF")
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        # Apply header formatting
+        for cell in worksheet[1]:
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+            
+        # Auto-adjust column widths
+        for column in worksheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+                    
+            adjusted_width = min(max_length + 2, 50)
+            worksheet.column_dimensions[column_letter].width = adjusted_width
+            
+        # Format datetime columns
+        datetime_columns = [col for col in data.columns if 'time' in col.lower() or 'date' in col.lower()]
+        for col_idx, col_name in enumerate(data.columns, 1):
+            if col_name in datetime_columns:
+                for row in range(2, len(data) + 2):
+                    cell = worksheet.cell(row=row, column=col_idx)
+                    cell.number_format = 'yyyy-mm-dd hh:mm:ss'
+                    
+        # Add filters
+        worksheet.auto_filter.ref = worksheet.dimensions
+        
+        # Freeze header row
+        worksheet.freeze_panes = worksheet['A2']
+        
+    def _add_metadata_sheet(
+        self,
+        workbook,
+        user_sid: str,
+        last_event_time: datetime,
+        total_users: int,
+        additional_info: Optional[Dict[str, Any]] = None
+    ):
+        """
+        Add metadata sheet to workbook.
+        """
+        # Create metadata sheet
+        metadata_sheet = workbook.create_sheet('Report Metadata', 0)
+        
+        # Add metadata
+        metadata = [
+            ['Report Information', ''],
+            ['', ''],
+            ['Report Type:', 'User Activity Analysis'],
+            ['Generated By:', user_sid],
+            ['Generated At:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+            ['', ''],
+            ['Analysis Parameters', ''],
+            ['Last Event Time:', last_event_time.strftime('%Y-%m-%d %H:%M:%S')],
+            ['Time Window:', '24 hours before Last Event Time'],
+            ['Query Start Date:', '30 days before analysis'],
+            ['', ''],
+            ['Results Summary', ''],
+            ['Total Qualifying Users:', total_users],
+            ['Required Changes:', 'Password, Email, Phone, Token'],
+            ['Criteria:', 'All 4 changes within 24-hour window'],
+        ]
+        
+        # Add additional info if provided
+        if additional_info:
+            metadata.append(['', ''])
+            metadata.append(['Additional Information', ''])
+            for key, value in additional_info.items():
+                metadata.append([f'{key}:', str(value)])
+                
+        # Write metadata
+        for row_idx, row_data in enumerate(metadata, 1):
+            for col_idx, value in enumerate(row_data, 1):
+                cell = metadata_sheet.cell(row=row_idx, column=col_idx, value=value)
+                
+                # Format headers
+                if col_idx == 1 and value and value.endswith(':'):
+                    cell.font = Font(bold=True)
+                elif row_data[0] in ['Report Information', 'Analysis Parameters', 'Results Summary', 'Additional Information']:
+                    cell.font = Font(bold=True, size=12)
+                    
+        # Adjust column widths
+        metadata_sheet.column_dimensions['A'].width = 25
+        metadata_sheet.column_dimensions['B'].width = 40
+        
+    def format_for_clipboard(self, data: pd.DataFrame) -> str:
+        """
+        Format DataFrame for clipboard (used by Copy Excel Path).
+        
+        Args:
+            data: DataFrame to format
+            
+        Returns:
+            Tab-separated string suitable for clipboard
+        """
+        if data.empty:
+            return "No data to copy"
+            
+        # Convert to tab-separated for Excel paste
+        return data.to_csv(sep='\t', index=False)
 ```
 
----
+## B. Clipboard Utility
 
-## **B. Clipboard Utility Module**
-
-**Directory:**
-`src/client_activity_monitor/common/clipboard_utils.py`
-
-**Core Responsibility:**
-Allow copying the generated report file path to the clipboard (for easy email attachment).
-
-**Example Implementation:**
+Create `src/client_activity_monitor/common/clipboard_utils.py`:
 
 ```python
 import pyperclip
 from pathlib import Path
+from loguru import logger
 
-def copy_path_to_clipboard(path: Path):
-    pyperclip.copy(str(path))
+def copy_to_clipboard(text: str) -> bool:
+    """
+    Copy text to system clipboard.
+    
+    Args:
+        text: Text to copy
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        pyperclip.copy(text)
+        logger.info("Copied to clipboard successfully")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to copy to clipboard: {e}")
+        return False
+        
+def copy_file_path(filepath: Path) -> bool:
+    """
+    Copy file path to clipboard.
+    
+    Args:
+        filepath: Path object to copy
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    return copy_to_clipboard(str(filepath.absolute()))
 ```
 
-> **Install**: `poetry add pyperclip`
+## C. Controller Integration
 
----
+Update the controller to handle report generation and clipboard operations:
 
-## **C. Controller/Workflow Integration**
+```python
+class MainController:
+    def __init__(self):
+        # ... other init ...
+        self.report_generator = ReportGenerator(
+            self.config_manager.get_app_settings().get('report_output_dir', 'reports')
+        )
+        self.last_report_path = None
+        self.last_report_data = None
+        
+    def _run_analysis_thread(self, start_date: datetime, last_event_time: datetime):
+        """Extended from Step 4/5."""
+        try:
+            # ... execute queries and filter ...
+            
+            if not filtered_data.empty:
+                # Get user SID for audit
+                user_sid = self.config_manager.get_user_sid()
+                
+                # Generate Excel report
+                self.last_report_path = self.report_generator.create_excel_report(
+                    data=filtered_data,
+                    user_sid=user_sid,
+                    last_event_time=last_event_time,
+                    additional_info={
+                        'Database Count': len(self.config_manager.get_all_databases()),
+                        'Analysis Start Time': start_date.strftime('%Y-%m-%d %H:%M:%S')
+                    }
+                )
+                
+                # Store data for other operations
+                self.last_report_data = filtered_data
+                
+                # Enable report action buttons
+                self.run_analysis_panel.enable_report_actions(True)
+                
+                # Show success message
+                self.show_message(
+                    "Report Generated",
+                    f"Found {len(filtered_data)} users meeting criteria.\n"
+                    f"Report saved to: {self.last_report_path.name}"
+                )
+            else:
+                self.show_message(
+                    "No Results",
+                    "No users found meeting all criteria within 24-hour window."
+                )
+                
+        except Exception as e:
+            logger.error(f"Report generation failed: {e}")
+            self.show_error("Report Generation Failed", str(e))
+            
+    def on_copy_excel_path(self):
+        """Handle Copy Excel Path to Clipboard button."""
+        if self.last_report_path and self.last_report_path.exists():
+            success = copy_file_path(self.last_report_path)
+            if success:
+                self.show_message(
+                    "Path Copied",
+                    f"Report path copied to clipboard:\n{self.last_report_path}"
+                )
+            else:
+                self.show_error("Copy Failed", "Failed to copy path to clipboard")
+        else:
+            self.show_warning("No Report", "No report available to copy")
+            
+    def on_optional_save(self):
+        """Handle Optional Save Report button (CSV export)."""
+        if self.last_report_data is not None and not self.last_report_data.empty:
+            try:
+                user_sid = self.config_manager.get_user_sid()
+                last_event_time = datetime.strptime(
+                    self.run_analysis_panel.get_last_event_time(),
+                    "%Y-%m-%d %H:%M"
+                )
+                
+                csv_path = self.report_generator.create_csv_report(
+                    data=self.last_report_data,
+                    user_sid=user_sid,
+                    last_event_time=last_event_time
+                )
+                
+                self.show_message(
+                    "CSV Saved",
+                    f"CSV report saved to:\n{csv_path.name}"
+                )
+            except Exception as e:
+                logger.error(f"CSV export failed: {e}")
+                self.show_error("Export Failed", str(e))
+        else:
+            self.show_warning("No Data", "No report data available to save")
+```
 
-* After merge/filter, controller calls `ReportingService.export_to_excel(filtered_df)`.
-* Stores returned file path.
-* If export succeeds, **enables “Copy Report Path to Clipboard” button** in the UI.
-* User can then click the button to copy the path (for manual attachment in Outlook).
+## D. Key Features
 
----
+1. **Timestamped Filenames**: Reports include timestamp in filename for uniqueness
+2. **Excel Formatting**: Professional formatting with headers, filters, and column widths
+3. **Metadata Sheet**: Audit trail showing who ran report, when, and with what parameters
+4. **CSV Option**: Optional save includes metadata as comments
+5. **Clipboard Support**: Copy file path for easy access
+6. **SID Tracking**: User SID included in all reports for audit purposes
 
-## **D. UI Integration**
+## E. Report Contents
 
-* Show report path in the UI (e.g., label or readonly textbox).
-* “Copy Path” button calls clipboard utility.
-* **If no results:**
+The Excel report includes:
+1. **User Activity Sheet**: Main data with all qualifying users
+2. **Report Metadata Sheet**: 
+   - Who generated the report (SID)
+   - When it was generated
+   - Analysis parameters used
+   - Summary of results
 
-  * Show message: “No report generated—no qualifying users.”
+## F. File Management
 
----
+- Reports saved to configurable directory (default: `reports/`)
+- Directory created automatically if doesn't exist
+- Files named with timestamp to prevent overwrites
+- Both Excel and CSV formats available
 
-## **E. Error Handling**
-
-* Block export/copy if DataFrame is empty.
-* Show user-friendly error if export fails (e.g., file permission, disk full).
-* Log all export actions/results.
-
----
-
-## **F. Testing**
-
-* **Unit test:**
-
-  * Check export with real/small DataFrames.
-  * Try export with empty DataFrame (should raise).
-* **Manual test:**
-
-  * Confirm files save correctly, clipboard utility works.
-
----
-
-## **G. Example AI Prompt**
-
-> Write a Python class that exports a pandas DataFrame to a timestamped Excel file in a reports directory, and a function to copy the file path to clipboard using pyperclip.
-
----
-
-## **Summary Table: Step 6**
-
-| Sub-Step          | Action/Behavior                                           |
-| ----------------- | --------------------------------------------------------- |
-| ReportingService  | Exports merged DataFrame to Excel (and CSV), returns path |
-| Clipboard Utility | Copies report path to clipboard for email/manual use      |
-| Controller        | Calls export, manages UI state, enables copy button       |
-| UI                | Shows report path, enables copy button only on success    |
-| Error Handling    | Handles empty DataFrame, export errors, logs actions      |
-| Testing           | Ensures correct file generation, clipboard works          |
-
----
-
-**Ready to proceed with Step 7 (Email Integration), or want code samples/UI stubs for report export and copy-to-clipboard?**
-Let me know how deep you want to go for this brick!
+## Next Step
+After implementing report generation, proceed to Step 7: Email Integration for creating draft emails with report information.

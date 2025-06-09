@@ -1,129 +1,549 @@
-# **Step 11: Documentation & Polish**
+# Step 11: Documentation & Polish
 
-## **Objective**
+## Objective
+Create comprehensive documentation, polish the UI/UX, and prepare the application for deployment and maintenance.
 
-* Make the project self-explanatory and developer/onboarding friendly.
-* Provide robust documentation for setup, usage, troubleshooting, and architecture.
-* Refine the UI/UX for a professional, error-resilient experience.
+## A. Project Documentation
 
----
+### 1. README.md
 
-## **A. Documentation Essentials**
+Create `README.md` in the project root:
 
-### **1. README.md**
+```markdown
+# Client Activity Monitor
 
-**Contents:**
+A desktop application for monitoring and reporting user activity across multiple Oracle databases, designed for Security Operations Center (SOC) teams.
 
-* **Project Overview:** Purpose and scope of the Oracle User Activity Monitor.
-* **Features:** What the app does, key user workflows.
-* **Getting Started:**
+## Overview
 
-  * Prerequisites (Python version, Poetry, Oracle client, Kerberos, dependencies)
-  * Setup instructions (clone, install, configure)
-  * How to run the app
-* **Basic Usage:**
+The Client Activity Monitor queries multiple Oracle databases to identify users who have made all four critical changes (password, email, phone, and security token) within a 24-hour window. It generates comprehensive reports and facilitates quick incident response.
 
-  * How to configure and run your first analysis
-  * Screenshots or wireframes for visual reference
-* **Troubleshooting:**
+## Features
 
-  * Common errors, solutions, and “what to check” for connection, kinit, reporting
-* **Contribution Guidelines:** (optional, for team projects)
-* **License:** Open source or internal/corporate
+- **Multi-Database Support**: Concurrent querying across multiple Oracle databases
+- **Kerberos Authentication**: Secure database connections using Kerberos
+- **Real-Time Monitoring**: Live status updates during query execution
+- **Comprehensive Reporting**: Excel reports with detailed user activity
+- **Integration Support**: Email drafts and OneNote summary entries
+- **Audit Trail**: Complete logging of who ran reports and when
 
----
+## Prerequisites
 
-### **2. `docs/architecture.md`**
+- Python 3.12 or higher
+- Oracle Instant Client 19c or higher
+- Kerberos configuration (krb5.conf)
+- Valid Kerberos ticket (kinit)
+- Oracle database access with appropriate permissions
 
-* **Directory Layout:** Annotated folder structure
-* **MVC Pattern:** Explanation of how Model, View, Controller, and Integrations interact
-* **Workflow Diagrams:**
+## Installation
 
-  * Sequence diagram or flowchart (using Markdown/ASCII, Mermaid, or an included image)
-  * “Brick-by-brick” development summary
-* **Key Components:** Short description of each module/class and its responsibility
-* **Config Schema Reference:** Example YAML/JSON snippets
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourorg/client-activity-monitor.git
+   cd client-activity-monitor
+   ```
 
----
+2. Install dependencies using Poetry:
+   ```bash
+   poetry install
+   ```
 
-### **3. `docs/user_guide.md`**
+3. Configure your databases in `configs/databases.yaml`
 
-* **Step-by-Step Instructions:**
+4. Run the application:
+   ```bash
+   poetry run oracle-monitor
+   ```
 
-  * Setting up the Oracle/Kerberos environment
-  * Filling in and saving configuration
-  * Running analysis, generating reports, and emailing or logging results
-* **Copy-paste Guides:**
+## Configuration
 
-  * How to attach/export files, paste to OneNote, etc.
-* **Screenshots:** If possible, walk through all panels and workflows visually.
+### Database Configuration (configs/databases.yaml)
 
----
+```yaml
+databases:
+  - name: client_activity_analysis
+    host: your.database.host
+    port: 1521
+    service_name: YOUR_SERVICE
+    default_schema: AUDIT_LOGS
+    sql_queries:
+      - name: "Get all email changes"
+        query_location: "queries/get_all_email_changes.sql"
+```
 
-## **B. UI/UX Polish**
+### Application Settings
 
-* **Refine Labels/Buttons:**
+The application will prompt for:
+- Oracle Instant Client directory
+- Kerberos configuration file path
+- Kerberos cache file path
+- Your user SID
 
-  * Use clear, descriptive button texts and status messages.
-* **Tooltips/Help:**
+## Usage
 
-  * Add tooltips to all fields/buttons that might confuse new users.
-  * Use placeholder text and input validation warnings.
-* **Accessibility:**
+1. **Initial Setup**: Enter Oracle/Kerberos paths and save configuration
+2. **Run KINIT**: Execute `kinit` in terminal to obtain Kerberos ticket
+3. **Run Analysis**: Check the KINIT checkbox and click "Run Report"
+4. **View Results**: Monitor progress in Database Status panel
+5. **Export Report**: Use action buttons to email or copy results
 
-  * Check tab order, keyboard navigation, and color contrast.
-* **Final Styling:**
+## Troubleshooting
 
-  * Consistent padding, alignment, and colors for a professional look.
+### Common Issues
 
----
+- **ORA-01017**: Invalid credentials - check Kerberos ticket with `klist`
+- **Connection Timeout**: Verify network access to database servers
+- **Missing SQL Files**: Ensure queries/ directory contains all SQL files
+- **No Results**: Check if users made changes within the time window
 
-## **C. Final Testing**
+### Logs
 
-* **User Walkthrough:**
+- Application logs: Check the Logs panel in the UI
+- Detailed logs: `logs/client_activity_monitor.log`
 
-  * Start from a clean clone, follow README step by step—update docs with any missing info.
-* **Edge Cases:**
+## Development
 
-  * Try invalid configs, expired Kerberos, missing files, etc., and verify error messages/help.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development guidelines.
 
----
+## License
 
-## **D. Code Polish**
+[Your License Here]
+```
 
-* **Docstrings:** Ensure all public classes/methods are documented.
-* **Remove dead code and TODOs:** Clean up any scaffolding or unused features.
-* **Type Hints:** Confirm all function signatures use type hints for future maintainability.
-* **Logging:** Optionally, ensure logs can be saved to file as well as shown in the UI.
-* **Versioning:** Tag a release or stable commit (`v1.0.0`).
+### 2. User Guide
 
----
+Create `docs/user_guide.md`:
 
-## **E. Next Steps/Hand-off Plan (Optional)**
+```markdown
+# User Guide - Client Activity Monitor
 
-* **Contribution/Dev Guide:**
+## Table of Contents
+1. [Getting Started](#getting-started)
+2. [Configuration](#configuration)
+3. [Running Analysis](#running-analysis)
+4. [Understanding Results](#understanding-results)
+5. [Reporting Actions](#reporting-actions)
+6. [Best Practices](#best-practices)
 
-  * “How to add a new query/report panel”
-  * “How to test integrations or update dependencies”
-* **Ideas for Future Enhancements:**
+## Getting Started
 
-  * Automated OneNote API integration (if ever permitted)
-  * Multi-user/multi-database support
-  * Custom report templates
+### First-Time Setup
 
----
+1. **Launch the Application**
+   ```bash
+   poetry run oracle-monitor
+   ```
 
-## **Summary Table: Final Step**
+2. **Configure Oracle Client Settings**
+   - Oracle Client Path: Browse to your Oracle Instant Client directory
+   - KRB5 Config Path: Select your krb5.conf file
+   - KRB5 Cache Path: Enter path where Kerberos stores tickets
+   - User SID: Enter your employee ID (5-10 characters)
 
-| Area                | Actions                                              |
-| ------------------- | ---------------------------------------------------- |
-| README.md           | Overview, install, usage, troubleshooting            |
-| architecture.md     | Structure, flow diagrams, MVC explanation            |
-| user\_guide.md      | Step-by-step usage, screenshots, copy-paste guides   |
-| UI/UX               | Polish all controls, tooltips, layout, accessibility |
-| Testing             | Run through install and main workflows               |
-| Code Polish         | Docstrings, type hints, remove dead code             |
-| Versioning          | Tag a stable release                                 |
-| Future Enhancements | Document “what’s next”/ideas                         |
+3. **Save Configuration**
+   - Click "Save Config" to store settings
+   - Settings are saved for future use
 
----
+### Pre-Flight Checklist
+
+Before running analysis:
+- [ ] Obtain Kerberos ticket: `kinit username@DOMAIN`
+- [ ] Verify ticket: `klist`
+- [ ] Ensure network connectivity to databases
+- [ ] Check VPN connection if required
+
+## Configuration
+
+### Understanding the Configuration Files
+
+**configs/databases.yaml** (Admin-managed)
+- Contains database connection details
+- Defines which queries run on which database
+- Not editable through UI
+
+**configs/app_settings.yaml** (User settings)
+- Stores your Oracle client paths
+- Saves your SID for audit purposes
+- Email recipients for reports
+
+### Modifying Settings
+
+To update your configuration:
+1. Click "Edit Config" if settings are locked
+2. Update the necessary fields
+3. Click "Save Config"
+
+## Running Analysis
+
+### Steps to Run Analysis
+
+1. **Verify Kerberos Authentication**
+   - Check the "KINIT Executed?" checkbox
+   - This confirms you have a valid Kerberos ticket
+
+2. **Review Last Event Time**
+   - This shows when the last report was run
+   - Analysis looks for changes 24 hours before this time
+
+3. **Click "Run Report"**
+   - Button is only enabled when KINIT is checked
+   - Analysis begins immediately
+
+### What Happens During Analysis
+
+1. **Connection Phase**
+   - Connects to each configured database
+   - Status shows "Connecting..."
+
+2. **Query Execution**
+   - Runs specific queries on each database
+   - Shows "Running..." with live updates
+
+3. **Data Processing**
+   - Merges results from all databases
+   - Filters for users meeting all criteria
+
+4. **Report Generation**
+   - Creates Excel report with results
+   - Updates Last Event Time to current time
+
+## Understanding Results
+
+### Report Criteria
+
+Users appear in the report if they have:
+- Changed their password AND
+- Changed their email AND
+- Changed their phone number AND
+- Changed their security token
+- ALL within the same 24-hour window
+
+### Reading the Excel Report
+
+**User Activity Sheet**
+- User ID: The user who made changes
+- Change timestamps for each type
+- Time window between first and last change
+- Source database for each change
+
+**Report Metadata Sheet**
+- Who generated the report (your SID)
+- When it was generated
+- Analysis parameters used
+- Summary statistics
+
+### Database Status Panel
+
+- **Green**: Query completed successfully
+- **Blue**: Query currently running
+- **Orange**: Connecting to database
+- **Red**: Query or connection failed
+- **Gray**: Pending or idle
+
+## Reporting Actions
+
+### Generate Email Report
+1. Click "Generate Email Report"
+2. Email client opens with:
+   - Pre-filled recipients from configuration
+   - Summary of findings in body
+   - Instructions to attach Excel file
+3. Manually attach the Excel report
+4. Send to SOC team
+
+### Copy Excel Path to Clipboard
+- Copies full file path of report
+- Use for manual file operations
+- Helpful for email attachments
+
+### OneNote Entry to Clipboard
+- Copies summary line with:
+  - Your SID
+  - Report run time
+  - Last event time  
+  - Number of users found
+- Paste into OneNote activity log
+
+### Optional Save Report
+- Exports data as CSV format
+- Includes same data as Excel
+- Useful for automated processing
+
+## Best Practices
+
+### Daily Workflow
+
+1. **Morning Check**
+   - Run `kinit` to get fresh ticket
+   - Run analysis for overnight activity
+   - Review any flagged users
+
+2. **Investigation Process**
+   - Note users in report
+   - Check with identity management team
+   - Document in incident tracking system
+
+3. **Record Keeping**
+   - Use OneNote entry for daily log
+   - Save reports to shared drive
+   - Email significant findings
+
+### Performance Tips
+
+- Run during off-peak hours for faster queries
+- Close other database tools to free connections
+- Monitor VPN connection stability
+- Keep Kerberos ticket refreshed
+
+### Security Reminders
+
+- Never share your Kerberos credentials
+- Lock workstation when away
+- Review email recipients regularly
+- Store reports in secure locations
+
+## Troubleshooting Quick Reference
+
+| Issue | Solution |
+|-------|----------|
+| "Run Report" disabled | Check KINIT checkbox |
+| Connection failed | Run `kinit` again |
+| No results found | Normal - no suspicious activity |
+| Queries timing out | Check network/VPN connection |
+| Excel won't open | Check default program associations |
+
+## Need Help?
+
+- Application issues: Contact IT Support
+- Database access: Contact DBA team  
+- Security questions: Contact SOC lead
+- Report interpretation: See SOC procedures
+```
+
+### 3. Architecture Documentation
+
+Create `docs/architecture.md`:
+
+```markdown
+# Architecture Documentation
+
+## System Architecture
+
+### Overview
+
+The Client Activity Monitor follows a Model-View-Controller (MVC) architecture with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────┐
+│                  User Interface                  │
+│  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
+│  │  Config  │  │    Run   │  │   Database   │  │
+│  │  Panel   │  │ Analysis │  │    Status    │  │
+│  └──────────┘  └──────────┘  └──────────────┘  │
+└─────────────────────┬───────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────┐
+│                  Controller                      │
+│         Orchestrates all operations              │
+└─────────────────────┬───────────────────────────┘
+                      │
+┌─────────────────────┴───────────────────────────┐
+│                    Model                         │
+│  ┌─────────────┐  ┌──────────────┐             │
+│  │   Services  │  │ Repositories │             │
+│  │             │  │              │             │
+│  │ • Executor  │  │ • Query Repo │             │
+│  │ • Merger    │  │ • Connection │             │
+│  │ • Reporter  │  │              │             │
+│  └─────────────┘  └──────────────┘             │
+└─────────────────────────────────────────────────┘
+```
+
+### Component Responsibilities
+
+#### View Layer
+- **ConfigurationPanel**: User settings input
+- **RunAnalysisPanel**: Analysis controls and actions
+- **DatabaseStatusPanel**: Real-time query status
+- **LogPanel**: Application activity log
+
+#### Controller Layer
+- **MainController**: Central orchestration
+- Event handling from UI
+- Service coordination
+- Thread management
+
+#### Model Layer
+- **ConfigManager**: Configuration file handling
+- **DatabaseExecutor**: Concurrent query execution
+- **QueryRepository**: Database connections
+- **MergeFilterService**: Data processing
+- **ReportGenerator**: Excel/CSV generation
+
+### Data Flow
+
+1. **Configuration Loading**
+   ```
+   YAML Files → ConfigManager → Controller → UI Panels
+   ```
+
+2. **Query Execution**
+   ```
+   Controller → DatabaseExecutor → ThreadPool → QueryRepository → Database
+                                                       ↓
+   UI Status ← Progress Callback ← ← ← ← ← ← ← ← Results
+   ```
+
+3. **Report Generation**
+   ```
+   Query Results → MergeFilterService → ReportGenerator → Excel/CSV
+                           ↓
+                   Filtered DataFrame
+   ```
+
+### Threading Model
+
+- **Main Thread**: UI and event handling
+- **Analysis Thread**: Orchestrates execution
+- **Worker Threads**: One per database for concurrent queries
+
+### Configuration Schema
+
+#### databases.yaml
+```yaml
+databases:
+  - name: string          # Database identifier
+    host: string          # Database hostname
+    port: integer         # Database port (default: 1521)
+    service_name: string  # Oracle service name
+    default_schema: string # Default schema
+    sql_queries:          # Queries for this database
+      - name: string      # Query identifier
+        query_location: string # Path to SQL file
+```
+
+#### app_settings.yaml
+```yaml
+oracle_client:            # Oracle client configuration
+  instant_client_dir: string
+  krb5_conf: string
+  krb5_cache: string
+  
+app_settings:             # Application settings
+  report_output_dir: string
+  email_recipients: list
+  
+user_settings:            # User-specific settings
+  sid: string
+```
+
+### Security Considerations
+
+1. **Authentication**: Kerberos-based SSO
+2. **Authorization**: Database permissions
+3. **Audit Trail**: User SID in all operations
+4. **Data Protection**: No credentials stored
+
+### Error Handling Strategy
+
+1. **Validation Layer**: Input validation before processing
+2. **Exception Hierarchy**: Typed exceptions for different failures
+3. **Graceful Degradation**: Partial results on database failure
+4. **User Feedback**: Clear error messages
+5. **Logging**: Detailed logs for debugging
+
+### Performance Optimizations
+
+1. **Concurrent Queries**: ThreadPoolExecutor for parallel execution
+2. **Connection Pooling**: Reusable database connections
+3. **Lazy Loading**: Configure once, reuse many
+4. **Result Streaming**: Process data as it arrives
+5. **UI Responsiveness**: All heavy work in threads
+```
+
+## B. Code Documentation
+
+### 1. Docstring Standards
+
+Update all modules with comprehensive docstrings:
+
+```python
+"""
+Client Activity Monitor - Main Controller
+
+This module serves as the central orchestrator for the Client Activity Monitor
+application. It coordinates between the UI (View) and business logic (Model)
+following the MVC pattern.
+
+Key Responsibilities:
+- Initialize and manage all application components
+- Handle UI events and delegate to appropriate services  
+- Manage threading for non-blocking operations
+- Coordinate error handling and user feedback
+
+Author: [Your Team]
+Created: [Date]
+Modified: [Date]
+"""
+
+class MainController:
+    """
+    Central controller for the Client Activity Monitor application.
+    
+    This class orchestrates all application operations, managing the flow
+    between user interface events and business logic execution. It ensures
+    UI responsiveness through proper threading and provides comprehensive
+    error handling.
+    
+    Attributes:
+        config_manager: Handles application configuration
+        app_ui: Main application window
+        report_generator: Creates Excel/CSV reports
+        last_report_path: Path to most recent report
+        last_report_data: DataFrame of most recent results
+        
+    Example:
+        >>> controller = MainController()
+        >>> controller.run()  # Starts the application
+    """
+```
+
+### 2. API Documentation
+
+Create `docs/api_reference.md` with key interfaces:
+
+```markdown
+# API Reference
+
+## ConfigManager
+
+### Methods
+
+#### `load_configs() -> bool`
+Load configuration files and validate contents.
+
+**Returns:**
+- `bool`: True if both configs loaded successfully
+
+**Raises:**
+- `ConfigurationError`: If files missing or invalid
+
+#### `get_connection_params(database_name: str) -> Dict[str, Any]`
+Get connection parameters for specific database.
+
+**Parameters:**
+- `database_name`: Name of database from databases.yaml
+
+**Returns:**
+- `dict`: Connection parameters for OracleKerberosConnection
+
+## DatabaseExecutor
+
+### Methods
+
+#### `execute_all_databases(start_date, progress_callback, cancel_event) -> Dict`
+Execute queries on all configured databases concurrently.
+
+**Parameters:**
+- `start_date`: DateTime to use for query parameter
+- `progress_callback`: Function(db_name, query_
