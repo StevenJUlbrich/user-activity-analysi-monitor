@@ -4,10 +4,10 @@
 This is a cross-platform desktop application to monitor user activity across Oracle databases using Python, CustomTkinter, and MVC architecture.
 
 ## Key Requirements
-- Follow the step-by-step development plan in instructions/
+- Follow the step-by-step development plan in /home/sju/dev/projects/client_activity_monitor/.claude/instructions/
 - Use the provided ez_connect_oracle.py module for all database connections
-- Implement according to the canonical addendum in project.md
-- Generate code brick-by-brick as specified in project_ai.md
+- Implement according to the canonical addendum in .claude/project.md
+- Generate code brick-by-brick as specified in .claude/context/project_ai.md
 
 ## Development Approach
 1. Start with Step 1: Project Structure and Setup
@@ -17,6 +17,6 @@ This is a cross-platform desktop application to monitor user activity across Ora
 
 ## Important Notes
 - Multi-database configuration is canonical (configs/databases.yaml)
-- All SQL queries must use :user_id and :start_date parameters
+- All SQL queries must use :start_date parameters
 - Use loguru for logging to both file and UI
 - KINIT is handled via user checkbox only (no subprocess validation)
