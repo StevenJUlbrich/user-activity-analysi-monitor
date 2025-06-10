@@ -4,7 +4,7 @@
 import yaml
 import logging
 from pathlib import Path
-from ez_connect_oracle import OracleKerberosConnection
+from client_activity_monitor.model.repositories.ez_connect_oracle import OracleKerberosConnection
 
 # Setup logging
 logging.basicConfig(
