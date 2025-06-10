@@ -9,7 +9,10 @@ app_settings:
   report_output_dir: "reports"
   log_dir: "logs"
   log_level: "INFO"
-  email_recipients: ["security@example.com", "soc@example.com"]
+  email_recipients: 
+    - "security@example.com"
+    - "soc-team@example.com"
+    - "incident-response@example.com"
 
 user_settings:
   sid: "A12345"  # Your SID for audit trail only

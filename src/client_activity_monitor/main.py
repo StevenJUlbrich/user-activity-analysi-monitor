@@ -4,6 +4,21 @@ Client Activity Monitor - Main Entry Point
 
 This module serves as the entry point for the Client Activity Monitor application.
 It initializes the controller and starts the GUI application.
+
+The application monitors user activity across multiple Oracle databases to identify
+security-relevant changes made within a 24-hour window.
+
+Usage:
+    python main.py
+    
+    Or via Poetry:
+    poetry run python src/client_activity_monitor/main.py
+
+Requirements:
+    - Python 3.10+
+    - Oracle Instant Client
+    - Valid Kerberos configuration
+    - Database access permissions
 """
 
 import sys

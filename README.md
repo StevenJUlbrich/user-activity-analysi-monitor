@@ -40,7 +40,7 @@ The Client Activity Monitor queries multiple Oracle databases to identify users 
 
 4. Run the application:
    ```bash
-   poetry run client-monitor
+   poetry run python src/client_activity_monitor/main.py
    ```
 
 ## Configuration
@@ -55,7 +55,17 @@ Configure Oracle client paths and user settings:
 
 ### Database Configuration (configs/databases.yaml)
 
-Define your Oracle databases and queries to run on each.
+```yaml
+databases:
+  - name: client_activity_analysis
+    host: your.database.host
+    port: 1521
+    service_name: YOUR_SERVICE
+    default_schema: AUDIT_LOGS
+    sql_queries:
+      - name: "Get all email changes"
+        query_location: "queries/get_all_email_changes.sql"
+```
 
 ## Usage
 
@@ -72,9 +82,23 @@ The application follows the Model-View-Controller (MVC) pattern:
 - **View**: UI panels for configuration, analysis, and status
 - **Controller**: Orchestrates operations between Model and View
 
+## Troubleshooting
+
+### Common Issues
+
+- **ORA-01017**: Invalid credentials - check Kerberos ticket with `klist`
+- **Connection Timeout**: Verify network access to database servers
+- **Missing SQL Files**: Ensure queries/ directory contains all SQL files
+- **No Results**: Check if users made changes within the time window
+
+### Logs
+
+- Application logs: Check the Logs panel in the UI
+- Detailed logs: `logs/client_activity_monitor.log`
+
 ## Development
 
-See the development documentation in the `.claude/instructions/` directory for implementation details.
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for development guidelines.
 
 ## License
 

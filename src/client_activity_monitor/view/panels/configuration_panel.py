@@ -9,6 +9,7 @@ import customtkinter as ctk
 from tkinter import filedialog, messagebox
 from typing import Callable, Dict, Optional
 from pathlib import Path
+from ...common.validators import Validators
 
 
 class ConfigurationPanel(ctk.CTkFrame):
@@ -132,31 +133,47 @@ class ConfigurationPanel(ctk.CTkFrame):
             entry_widget.insert(0, file)
             
     def _on_save(self):
-        """Handle Save Config button click."""
+        """Handle Save Config button click with validation."""
         if self._is_editing:
-            # Gather config data
+            # Get values
+            oracle_path = self.oracle_path_entry.get().strip()
+            krb5_config = self.krb5_config_entry.get().strip()
+            krb5_cache = self.krb5_cache_entry.get().strip()
+            sid = self.sid_entry.get().strip()
+            
+            # Validate each field
+            validators = [
+                (Validators.validate_oracle_client_path(oracle_path), "Oracle Client Path"),
+                (Validators.validate_krb5_config(krb5_config), "KRB5 Config"),
+                (Validators.validate_krb5_cache(krb5_cache), "KRB5 Cache"),
+                (Validators.validate_sid(sid), "User SID")
+            ]
+            
+            # Check all validations
+            for (is_valid, error_msg), field_name in validators:
+                if not is_valid:
+                    self._show_error(f"{field_name}: {error_msg}")
+                    return
+                    
+            # All valid, proceed with save
             config_data = {
-                'oracle_client_path': self.oracle_path_entry.get().strip(),
-                'krb5_config_path': self.krb5_config_entry.get().strip(),
-                'krb5_cache_path': self.krb5_cache_entry.get().strip(),
-                'user_sid': self.sid_entry.get().strip()
+                'oracle_client_path': oracle_path,
+                'krb5_config_path': krb5_config,
+                'krb5_cache_path': krb5_cache,
+                'user_sid': sid
             }
             
-            # Basic validation
-            if not all(config_data.values()):
-                self._show_error("All fields are required")
-                return
-                
-            # Call the save callback
-            success, error_msg = self.save_callback(config_data)
-            
-            if success:
-                self._show_success("Configuration saved successfully")
-                # Switch to view mode
-                self._set_fields_enabled(False)
-                self._is_editing = False
-            else:
-                self._show_error(f"Failed to save: {error_msg}")
+            try:
+                success, error_msg = self.save_callback(config_data)
+                if success:
+                    self._show_success("Configuration saved successfully")
+                    # Switch to view mode
+                    self._set_fields_enabled(False)
+                    self._is_editing = False
+                else:
+                    self._show_error(f"Failed to save: {error_msg}")
+            except Exception as e:
+                self._show_error(f"Unexpected error: {str(e)}")
         else:
             # Switch to edit mode
             self._set_fields_enabled(True)
