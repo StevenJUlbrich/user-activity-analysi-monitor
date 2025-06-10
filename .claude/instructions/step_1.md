@@ -133,14 +133,14 @@ Example `queries/get_all_password_changes.sql`:
 ```sql
 SELECT 
     user_id,
-    change_timestamp,
-    'password' as change_type
-FROM 
-    user_password_history
-WHERE 
-    change_timestamp >= :start_date
-ORDER BY 
-    change_timestamp DESC
+    change_date,
+    change_type,
+    change_source,
+    ip_address,
+    user_agent
+FROM audit_logs.password_changes
+WHERE change_date >= :end_date
+ORDER BY change_date DESC
 ```
 
 ## D. Poetry Configuration
