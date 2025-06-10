@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.env
+
+# Poetry
+dist/
+*.egg-info/
+
+# Application
+reports/*.xlsx
+reports/*.csv
+logs/*.log
+configs/databases_local.yaml  # Local override config
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

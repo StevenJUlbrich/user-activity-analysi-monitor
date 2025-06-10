@@ -1,0 +1,15 @@
+oracle_client:
+  instant_client_dir: "/opt/oracle/instantclient_21_9"  # Update with your path
+  krb5_conf: "/etc/krb5.conf"
+  krb5_cache: "/tmp/krb5cc_${UID}"  # Will use your user's ticket cache
+  trace_level: 0  # Set to 16 for debugging
+  trace_directory: "/tmp/oracle_trace"
+
+app_settings:
+  report_output_dir: "reports"
+  log_dir: "logs"
+  log_level: "INFO"
+  email_recipients: ["security@example.com", "soc@example.com"]
+
+user_settings:
+  sid: "A12345"  # Your SID for audit trail only

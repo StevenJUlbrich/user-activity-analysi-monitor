@@ -1,0 +1,22 @@
+databases:
+  - name: client_activity_analysis
+    host: oracle.client.example.com
+    port: 6036  # Custom Oracle port
+    service_name: CLIENT_AUDIT
+    default_schema: "event_logs"
+    sql_queries:
+      - name: "Get all email changes"
+        query_location: "queries/get_all_email_changes.sql"
+      - name: "Get phone changes by client ID"
+        query_location: "queries/get_phone_changes_by_client_id.sql"
+      - name: "Get token changes"
+        query_location: "queries/get_token_changes.sql"
+        
+  - name: account_activity_analysis
+    host: oracle.account.example.com
+    port: 6036
+    service_name: ACCOUNT_AUDIT
+    default_schema: "audit_logs"
+    sql_queries:
+      - name: "Get all password changes"
+        query_location: "queries/get_all_password_changes.sql"
