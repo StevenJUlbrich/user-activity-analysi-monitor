@@ -35,7 +35,7 @@ your_project/
 
 ## Requirements
 
-* Python 3.9 or higher (Python 3.11+ recommended)
+* Python 3.10 or higher (Python 3.11+ recommended)
 * Oracle Instant Client (must be installed and referenced in configs)
 * **Dependencies:**
   See [`requirements.txt`](./requirements.txt)
