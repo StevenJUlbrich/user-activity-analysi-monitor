@@ -1,7 +1,7 @@
 # Oracle Activity Monitor - Claude Code Instructions
 
 ## Project Overview
-This is a cross-platform desktop application to monitor user activity across Oracle databases using Python, CustomTkinter, and MVC architecture.
+This is a cross-platform python desktop application to review user activity across Oracle databases using Python, CustomTkinter, and MVC architecture.
 
 ## Key Requirements
 - Follow the step-by-step development plan in /home/sju/dev/projects/client_activity_monitor/.claude/instructions/
