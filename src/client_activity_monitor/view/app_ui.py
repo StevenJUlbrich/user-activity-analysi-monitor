@@ -20,7 +20,10 @@ class AppUI(ctk.CTk):
         self.controller = controller
         self.title("User Activity Review")
         self.geometry("1200x800")
-        
+
+        # Set default theme
+        ctk.set_appearance_mode("light")  # Options: "light", "dark", "system"
+
         # Create main container with grid layout
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=2)
