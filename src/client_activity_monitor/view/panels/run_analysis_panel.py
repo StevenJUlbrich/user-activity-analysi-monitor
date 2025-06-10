@@ -38,7 +38,7 @@ class RunAnalysisPanel(ctk.CTkFrame):
         super().__init__(parent)
         self.callbacks = callbacks
         self._create_widgets()
-        self._initialize_datetime()
+        self.update_last_event_time(datetime.now().strftime("%Y-%m-%d %H:%M"))
         
     def _create_widgets(self):
         """Create all UI widgets matching the wireframe."""
@@ -122,12 +122,6 @@ class RunAnalysisPanel(ctk.CTkFrame):
         # Configure grid weights
         self.grid_columnconfigure(0, weight=1)
         self.grid_columnconfigure(1, weight=1)
-        
-    def _initialize_datetime(self):
-        """Set default datetime to current time."""
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-        self.datetime_entry.delete(0, 'end')
-        self.datetime_entry.insert(0, current_time)
         
     def _on_kinit_toggle(self):
         """Handle KINIT checkbox toggle."""
