@@ -25,7 +25,7 @@ class RunAnalysisPanel(ctk.CTkFrame):
     def __init__(self, parent, callbacks: Dict[str, Callable]):
         """
         Initialize the Run Analysis panel.
-        
+
         Args:
             parent: Parent widget
             callbacks: Dictionary of callback functions:
@@ -38,7 +38,9 @@ class RunAnalysisPanel(ctk.CTkFrame):
         super().__init__(parent)
         self.callbacks = callbacks
         self._create_widgets()
-        self.update_last_event_time(datetime.now().strftime("%Y-%m-%d %H:%M"))
+        # Leave the date/time field blank initially so the user must
+        # enter a value in "YYYY-MM-DD HH:MM" format.
+        self.update_last_event_time("")
         
     def _create_widgets(self):
         """Create all UI widgets matching the wireframe."""
