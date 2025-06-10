@@ -30,7 +30,7 @@ class ConfigurationPanel(ctk.CTkFrame):
         Args:
             parent: Parent widget
             save_callback: Function to call when Save Config is clicked
-                         Signature: save_callback(config_dict) -> (success, error_msg)
+            Signature: save_callback(config_dict) -> (success, error_msg)
         """
         super().__init__(parent)
         self.save_callback = save_callback
