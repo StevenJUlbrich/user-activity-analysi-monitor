@@ -154,6 +154,38 @@ class MainController:
             
         return config_dict
         
+    def _validate_oracle_configuration(self) -> Tuple[bool, Optional[str]]:
+        """
+        Validate Oracle client configuration before attempting connections.
+        
+        Returns:
+            Tuple of (is_valid, error_message)
+        """
+        oracle_config = self.config_manager.get_oracle_client_config()
+        if not oracle_config:
+            return False, "Oracle client configuration not found. Please configure Oracle paths."
+            
+        # Check if paths exist
+        from pathlib import Path
+        instant_client_path = Path(oracle_config.instant_client_dir)
+        if not instant_client_path.exists():
+            return False, f"Oracle Instant Client directory not found: {oracle_config.instant_client_dir}"
+            
+        krb5_conf_path = Path(oracle_config.krb5_conf)
+        if not krb5_conf_path.exists():
+            return False, f"Kerberos configuration file not found: {oracle_config.krb5_conf}"
+            
+        # Check if user has a valid Kerberos ticket
+        import subprocess
+        try:
+            result = subprocess.run(['klist'], capture_output=True, text=True)
+            if result.returncode != 0 or "No credentials cache found" in result.stderr:
+                return False, "No valid Kerberos ticket found. Please run 'kinit' to obtain a ticket."
+        except FileNotFoundError:
+            logger.warning("klist command not found - unable to verify Kerberos ticket")
+            
+        return True, None
+    
     @handle_errors(log_errors=True)
     def on_run_report(self, last_event_time_str: str):
         """
@@ -167,6 +199,12 @@ class MainController:
             is_valid, error_msg = Validators.validate_datetime(last_event_time_str)
             if not is_valid:
                 self.show_error("Invalid Input", error_msg)
+                return
+                
+            # Validate Oracle configuration
+            is_valid, error_msg = self._validate_oracle_configuration()
+            if not is_valid:
+                self.show_error("Configuration Error", error_msg)
                 return
                 
             # Check configuration
@@ -219,11 +257,21 @@ class MainController:
             # Execute queries on all databases
             self.database_executor = DatabaseExecutor(self.config_manager)
             
-            results = self.database_executor.execute_all_databases(
-                start_date=start_date,
-                progress_callback=self.update_database_status_ui,
-                cancel_event=self.cancel_event
-            )
+            try:
+                results = self.database_executor.execute_all_databases(
+                    start_date=start_date,
+                    progress_callback=self.update_database_status_ui,
+                    cancel_event=self.cancel_event
+                )
+            except DatabaseConnectionError as e:
+                # Database connection failed - stop all processing
+                logger.error(f"Database connection error: {e}")
+                self.show_error(
+                    "Database Connection Failed",
+                    f"{str(e)}\n\nAnalysis has been stopped. Please check your database " +
+                    "configurations and ensure all databases are accessible."
+                )
+                return
             
             # Log summary
             for db_name, queries in results.items():
@@ -284,9 +332,20 @@ class MainController:
                     "No users found meeting all criteria within 24-hour window."
                 )
             
+        except DatabaseConnectionError as e:
+            # This should already be handled above, but just in case
+            logger.error(f"Database connection error in thread: {e}")
+            self.show_error("Database Connection Failed", str(e))
         except Exception as e:
             logger.error(f"Analysis failed: {e}")
-            self.show_error("Analysis Failed", str(e))
+            # Check if it's a wrapped database connection error
+            if "database" in str(e).lower() and "connect" in str(e).lower():
+                self.show_error(
+                    "Database Connection Failed",
+                    f"{str(e)}\n\nPlease verify your database credentials and network connectivity."
+                )
+            else:
+                self.show_error("Analysis Failed", str(e))
         finally:
             if self.run_analysis_panel:
                 self.run_analysis_panel.set_running_state(False)

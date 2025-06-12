@@ -1,11 +1,12 @@
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Event
-from typing import Dict, Callable, Any, Optional
+from typing import Dict, Callable, Any, Optional, List
 import pandas as pd
 from datetime import datetime
 from loguru import logger
 from ..config_manager import ConfigManager
 from ..repositories.query_repository import QueryRepository
+from ...common.exceptions import DatabaseConnectionError
 
 class DatabaseExecutor:
     """Manages concurrent query execution across multiple databases."""
@@ -19,6 +20,40 @@ class DatabaseExecutor:
         """
         self.config_manager = config_manager
         
+    def test_connections(self, databases: List[Any]) -> Dict[str, bool]:
+        """
+        Test connections to all databases before starting the main analysis.
+        
+        Args:
+            databases: List of database configurations
+            
+        Returns:
+            Dictionary mapping database names to connection success status
+        """
+        connection_status = {}
+        
+        for db_config in databases:
+            db_name = db_config.name
+            logger.info(f"Testing connection to {db_name}...")
+            
+            conn_params = self.config_manager.get_connection_params(db_name)
+            if not conn_params:
+                connection_status[db_name] = False
+                continue
+                
+            repo = QueryRepository(conn_params, db_name)
+            try:
+                success = repo.connect()
+                connection_status[db_name] = success
+                if success:
+                    logger.info(f"Successfully connected to {db_name}")
+                else:
+                    logger.error(f"Failed to connect to {db_name}")
+            finally:
+                repo.close()
+                
+        return connection_status
+    
     def execute_all_databases(
         self,
         start_date: datetime,
@@ -49,6 +84,22 @@ class DatabaseExecutor:
         """
         databases = self.config_manager.get_all_databases()
         results = {}
+        
+        # First, test all connections before starting the main analysis
+        logger.info("Testing database connections...")
+        connection_status = self.test_connections(databases)
+        
+        # Check if any connection failed
+        failed_databases = [db for db, success in connection_status.items() if not success]
+        if failed_databases:
+            error_msg = f"Failed to connect to the following databases: {', '.join(failed_databases)}"
+            logger.error(error_msg)
+            # Mark all databases as failed in the UI
+            for db_config in databases:
+                progress_callback(db_config.name, "all", "failed", None)
+            raise DatabaseConnectionError(error_msg)
+        
+        logger.info("All database connections successful. Starting analysis...")
         
         # Use ThreadPoolExecutor for concurrent database execution
         with ThreadPoolExecutor(max_workers=len(databases)) as executor:
@@ -84,7 +135,14 @@ class DatabaseExecutor:
                 except Exception as e:
                     logger.error(f"Database {db_name} execution failed: {e}")
                     progress_callback(db_name, "all", "failed", None)
-                    results[db_name] = {}
+                    # Cancel all remaining operations
+                    cancel_event.set()
+                    # Cancel all pending futures
+                    for pending_future in future_to_db:
+                        if not pending_future.done():
+                            pending_future.cancel()
+                    # Re-raise the exception to stop all processing
+                    raise DatabaseConnectionError(f"Critical error in database {db_name}: {str(e)}")
                     
         return results
         
@@ -121,7 +179,7 @@ class DatabaseExecutor:
             # Connect to database
             if not repo.connect():
                 progress_callback(db_name, "all", "failed", None)
-                return results
+                raise DatabaseConnectionError(f"Failed to connect to database: {db_name}")
                 
             # Execute each query defined for this database
             for query_def in db_config.sql_queries:

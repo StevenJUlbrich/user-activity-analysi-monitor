@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from loguru import logger
 from .ez_connect_oracle import OracleKerberosConnection
+from ...common.exceptions import DatabaseConnectionError
 
 class QueryRepository:
     """Handles query execution for a single Oracle database."""
@@ -33,7 +34,16 @@ class QueryRepository:
             logger.info(f"Connected to database: {self.database_name}")
             return True
         except Exception as e:
-            logger.error(f"Failed to connect to {self.database_name}: {e}")
+            error_msg = str(e)
+            # Check for common connection errors
+            if "ORA-01017" in error_msg:
+                logger.error(f"Authentication failed for {self.database_name}: Invalid credentials or Kerberos ticket expired")
+            elif "ORA-12170" in error_msg or "timeout" in error_msg.lower():
+                logger.error(f"Connection timeout for {self.database_name}: Unable to reach database server")
+            elif "ORA-12154" in error_msg:
+                logger.error(f"TNS error for {self.database_name}: Service name not found")
+            else:
+                logger.error(f"Failed to connect to {self.database_name}: {e}")
             return False
             
     def execute_query(self, query_name: str, sql_file_path: str, start_date: datetime) -> pd.DataFrame:
